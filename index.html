@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jason Statham Movie Creator — MadLibs</title>
+  <style>
+    :root{
+      --bg:#0e1326;
+      --panel:#161b34;
+      --ink:#eef1f7;
+      --muted:#c6c9d6;
+      --accent:#ff4655;
+      --ring: rgba(255,70,85,.4);
+      --line: rgba(255,255,255,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--ink);
+      background:
+        radial-gradient(1000px 500px at 10% -10%, #1b1f43 0, rgba(27,31,67,0) 60%),
+        radial-gradient(900px 500px at 110% 10%, #2c184e 0, rgba(44,24,78,0) 60%),
+        var(--bg);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      hyphens:none;
+    }
+    .max{max-width:1100px;margin:0 auto;padding:28px}
+    header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+    .logo{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,#ffa2ab,#ff4655);box-shadow:0 10px 24px rgba(255,70,85,.25)}
+    h1{margin:0;font-size:28px;letter-spacing:.2px}
+    .sub{color:var(--muted)}
+    .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:22px}
+    @media (max-width:900px){ .wrap{grid-template-columns:1fr} }
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 30%),var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px 16px;box-shadow:0 10px 32px rgba(0,0,0,.28)}
+    .title{font-weight:700;margin:0 0 10px 0;letter-spacing:.2px}
+    .script{
+      font-size:18px;border-radius:14px;padding:14px;background:#0f1430;border:1px solid var(--line);
+      word-break:keep-all; overflow-wrap:normal; hyphens:none;
+    }
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button, select{
+      border-radius:12px;border:1px solid var(--line);outline:none;color:var(--ink);background:#0f1430;
+      padding:12px 14px;cursor:pointer;
+    }
+    button{font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:linear-gradient(180deg,var(--accent),#d9213c);border:none}
+    .ghost{background:linear-gradient(180deg,#242a50,#151a38);border:1px solid var(--line)}
+    .pill{padding:4px 8px;border-radius:999px;background:#0d1130;border:1px solid var(--line);font-size:12px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    @media (max-width:700px){ .grid{grid-template-columns:1fr} }
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px 4px;text-transform:uppercase;letter-spacing:.12em}
+    select{width:100%;}
+    .choices{columns:3; column-gap:24px; color:var(--muted); font-size:14px}
+    @media (max-width:900px){ .choices{columns:2} }
+    @media (max-width:640px){ .choices{columns:1} }
+    .choices h3{break-inside:avoid;font-size:13px;text-transform:uppercase;letter-spacing:.12em;margin:10px 0 6px;color:var(--ink)}
+    .out{white-space:pre-wrap}
+    .muted{color:var(--muted)}
+    .hr{height:1px;background:var(--line);margin:14px 0}
+    @media print{
+      body{background:white;color:black}
+      .card{background:white;border:1px solid #ccc;box-shadow:none}
+      .logo{display:none}
+      button,.pill{display:none !important}
+      .sub{color:#333}
+      .choices{columns:2}
+      .script{font-size:16px;background:white;border:1px solid #ccc}
+    }
+  </style>
+</head>
+<body>
+  <div class="max">
+    <header>
+      <div class="logo">🎬</div>
+      <div>
+        <h1>Jason Statham Movie Creator</h1>
+        <div class="sub">MadLibs-style generator with fill‑in controls, randomizer, and print view.</div>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <section class="card">
+        <p class="title">Your Script</p>
+        <div id="script" class="script out">
+          <span class="muted">Pick from the fields on the right or hit “Roll All”.</span>
+        </div>
+        <div class="row">
+          <button id="roll">🎲 Roll All</button>
+          <button id="copy" class="ghost">📋 Copy</button>
+          <button id="five" class="ghost">🎲 Generate 5</button>
+          <button id="print" class="ghost">🖨️ Print</button>
+          <span id="copied" class="pill" style="display:none">Copied!</span>
+        </div>
+      </section>
+
+      <aside class="card">
+        <p class="title">Fields</p>
+        <div class="grid" id="fields"></div>
+      </aside>
+    </div>
+
+    <section class="card" style="margin-top:18px">
+      <p class="title">Fields & Choices (for pen‑and‑paper play)</p>
+      <div class="hr"></div>
+      <div id="choices" class="choices"></div>
+    </section>
+  </div>
+
+  <script>
+    // Master data
+    const data = {
+      "First": ["Cade","Jonah","Zander","Mack","Luke","Logan","Layne"],
+      "Last": ["Cade","Cole","Barrett","Hale","Payne","Steele","McQuaid"],
+      "Job": ["sniper","assassin","elite special operative","hostage rescue specialist","enforcer","bodyguard"],
+      "Org": ["the French Foreign Legion","the CIA","the mob","a worldwide criminal syndicate","PETA","MI6","a top secret government agency"],
+      "New Job": ["fry cook","beekeeper","construction worker","gardener","marine biologist","children's balloon artist"],
+      "Collateral Victim": ["best friend","boss's daughter","buddy's daughter","niece","elderly landlord","pet lobster","dog"],
+      "Crime": ["killed","kidnapped","put in the hospital"],
+      "Villains": ["the Yakuza","the mob","a greedy corporation","figures from his past"],
+      "Pronoun": ["him","her","it"],
+      "Something Bad": ["shadowy conspiracy","system of corruption","doomsday plot","violent underworld"]
+    };
+    const fieldOrder = ["First","Last","Job","Org","New Job","Collateral Victim","Crime","Villains","Pronoun","Something Bad"];
+
+    // Build controls
+    const fieldsEl = document.getElementById('fields');
+    const scriptEl = document.getElementById('script');
+    const choicesEl = document.getElementById('choices');
+    const state = {};
+
+    function createField(name, options){
+      const wrap = document.createElement('div');
+      const label = document.createElement('label');
+      label.textContent = name;
+      const sel = document.createElement('select');
+      sel.innerHTML = '<option value="">— choose —</option>' + options.map(o=>`<option>${o}</option>`).join('');
+      sel.addEventListener('change', ()=>{ state[name] = sel.value; render(); });
+      wrap.appendChild(label);
+      wrap.appendChild(sel);
+      fieldsEl.appendChild(wrap);
+    }
+    fieldOrder.forEach(k => createField(k, data[k]));
+
+    function render(){
+      const s = (n)=> state[n] || `[${n}]`;
+      // Keep placeholders bracketed and ensure no hyphenation
+      const txt = `${s("First")} ${s("Last")} turned his back on his past as a ${s("Job")} for ${s("Org")} to live a simple life as a ${s("New Job")}. But when his ${s("Collateral Victim")} is ${s("Crime")} by ${s("Villains")}, his quest to bring ${s("Pronoun")} home uncovers a ${s("Something Bad")} worse than he could have imagined.`;
+      scriptEl.textContent = txt;
+    }
+    render();
+
+    // Helpers
+    const rand = (arr)=> arr[Math.floor(Math.random()*arr.length)];
+    function rollAll(){
+      fieldOrder.forEach(k => state[k] = rand(data[k]));
+      // update selects to reflect random choices
+      [...fieldsEl.querySelectorAll('select')].forEach((sel,i)=>{ sel.value = state[fieldOrder[i]]; });
+      render();
+    }
+    document.getElementById('roll').addEventListener('click', rollAll);
+
+    document.getElementById('copy').addEventListener('click', async ()=>{
+      await navigator.clipboard.writeText(scriptEl.textContent);
+      const pill = document.getElementById('copied'); pill.style.display='inline-block'; setTimeout(()=> pill.style.display='none', 1200);
+    });
+
+    document.getElementById('five').addEventListener('click', ()=>{
+      let out = '';
+      for(let i=0;i<5;i++){
+        const f = fieldOrder.reduce((acc,k)=> (acc[k]=rand(data[k]), acc), {});
+        out += `• ${f["First"]} ${f["Last"]} turned his back on his past as a ${f["Job"]} for ${f["Org"]} to live a simple life as a ${f["New Job"]}. But when his ${f["Collateral Victim"]} is ${f["Crime"]} by ${f["Villains"]}, his quest to bring ${f["Pronoun"]} home uncovers a ${f["Something Bad"]} worse than he could have imagined.\n\n`;
+      }
+      alert(out.trim());
+    });
+
+    document.getElementById('print').addEventListener('click', ()=> window.print());
+
+    // Build choices list (columned, non-crowded)
+    function buildChoices(){
+      choicesEl.innerHTML = fieldOrder.map(k => {
+        const list = data[k].map(x => `• ${x}`).join('<br>');
+        return `<div><h3>${k}</h3><div>${list}</div></div>`;
+      }).join('');
+    }
+    buildChoices();
+  </script>
+</body>
+</html>
